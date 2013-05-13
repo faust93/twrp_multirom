@@ -955,7 +955,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			if(op_status)
 				gui_print("MultiROM is not installed!\n");
 			else
-				op_status = !MultiROM::injectBoot("/dev/block/mmcblk0p2");
+				op_status = !MultiROM::injectBoot("/dev/block/mmcblk0p6");
 			operation_end(op_status, simulate);
 		}
 

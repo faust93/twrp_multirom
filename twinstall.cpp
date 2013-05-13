@@ -166,7 +166,7 @@ extern "C" int TWinstall_zip(const char* path, int* wipe_cache) {
 	}
 	ret_val = mzOpenZipArchive(path, &Zip);
 	if (ret_val != 0) {
-		LOGERR("Zip file is corrupt!\n", path);
+		LOGERR("Zip file is corrupt! %s\n", path);
 		return INSTALL_CORRUPT;
 	}
 	return Run_Update_Binary(path, &Zip, wipe_cache);

@@ -352,7 +352,7 @@ bool MultiROM::changeMounts(std::string name)
 	std::string base = getRomsPath() + name;
 
 	mkdir(REALDATA, 0777);
-	if(mount("/dev/block/platform/sdhci-tegra.3/by-name/UDA",
+	if(mount("/dev/block/platform/omap/omap_hsmmc.1/by-name/userdata",
 	    REALDATA, "ext4", MS_RELATIME | MS_NOATIME,
 		"user_xattr,acl,barrier=1,data=ordered,discard") < 0)
 	{
@@ -442,10 +442,10 @@ bool MultiROM::changeMounts(std::string name)
 		fprintf(f_rec, "/cache\t\text4\t\t%s/cache.img\n", base.c_str());
 		fprintf(f_rec, "/data\t\text4\t\t%s/data.img\n", base.c_str());
 	}
-	fprintf(f_rec, "/misc\t\temmc\t\t/dev/block/platform/sdhci-tegra.3/by-name/MSC\n");
-	fprintf(f_rec, "/boot\t\temmc\t\t/dev/block/platform/sdhci-tegra.3/by-name/LNX\n");
-	fprintf(f_rec, "/recovery\t\temmc\t\t/dev/block/platform/sdhci-tegra.3/by-name/SOS\n");
-	fprintf(f_rec, "/staging\t\temmc\t\t/dev/block/platform/sdhci-tegra.3/by-name/USP\n");
+	fprintf(f_rec, "/misc\t\temmc\t\t/dev/block/platform/omap/omap_hsmmc.1/by-name/misc\n");
+	fprintf(f_rec, "/boot\t\temmc\t\t/dev/block/platform/omap/omap_hsmmc.1/by-name/boot\n");
+	fprintf(f_rec, "/recovery\t\temmc\t\t/dev/block/platform/omap/omap_hsmmc.1/by-name/recovery\n");
+	fprintf(f_rec, "/cust\t\text4\t\t/dev/block/platform/omap/omap_hsmmc.1/by-name/cust\n");
 	fprintf(f_rec, "/usb-otg\t\tvfat\t\t/dev/block/sda1\n");
 	fclose(f_rec);
 
@@ -507,6 +507,7 @@ void MultiROM::restoreMounts()
 #define MR_UPDATE_SCRIPT_PATH  "META-INF/com/google/android/"
 #define MR_UPDATE_SCRIPT_NAME  "META-INF/com/google/android/updater-script"
 
+//vuk
 bool MultiROM::flashZip(std::string rom, std::string file)
 {
 	gui_print("Flashing ZIP file %s\n", file.c_str());
@@ -525,11 +526,11 @@ bool MultiROM::flashZip(std::string rom, std::string file)
 
 	if(file.find("/sdcard/") != std::string::npos)
 	{
-		struct stat info;
-		if(stat(REALDATA"/media/0", &info) >= 0)
-			file.replace(0, strlen("/sdcard/"), REALDATA"/media/0/");
-		else
-			file.replace(0, strlen("/sdcard/"), REALDATA"/media/");
+//		struct stat info;
+//		if(stat(REALDATA"/media/0", &info) >= 0)
+//			file.replace(0, strlen("/sdcard/"), REALDATA"/media/0/");
+//		else
+//			file.replace(0, strlen("/sdcard/"), REALDATA"/media/");
 	}
 	else if(file.find("/data/media/") != std::string::npos)
 		file.replace(0, strlen("/data/"), REALDATA"/");
@@ -558,11 +559,11 @@ bool MultiROM::skipLine(const char *line)
 	if(strstr(line, "format"))
 		return true;
 
-	if(strstr(line, "/dev/block/platform/sdhci-tegra.3/"))
+	if(strstr(line, "/dev/block/platform/omap/omap_hsmmc.1/"))
 		return true;
 
-	if (strstr(line, "boot.img") || strstr(line, "/dev/block/mmcblk0p2") ||
-		strstr(line, "/dev/block/platform/sdhci-tegra.3/by-name/LNX"))
+	if (strstr(line, "boot.img") || strstr(line, "/dev/block/mmcblk0p6") ||
+		strstr(line, "/dev/block/platform/omap/omap_hsmmc.1/by-name/boot"))
 		return true;
 
 	return false;
@@ -583,11 +584,13 @@ bool MultiROM::prepareZIP(std::string& file)
 	system("rm /tmp/mr_update.zip");
 
 	struct stat info;
-	if(stat(file.c_str(), &info) >= 0 && info.st_size < 450*1024*1024)
+	if(stat(file.c_str(), &info) >= 0 && info.st_size < 250*1024*1024)
 	{
 		gui_print("Copying ZIP to /tmp...\n");
 		sprintf(cmd, "cp \"%s\" /tmp/mr_update.zip", file.c_str());
+		gui_print("DEBUG: file %s\n",file.c_str());
 		system(cmd);
+		gui_print("DEBUG: file %s\n",file.c_str());
 		file = "/tmp/mr_update.zip";
 	}
 	else
@@ -731,8 +734,8 @@ bool MultiROM::injectBoot(std::string img_path)
 		return false;
 	}
 	system("rm -r /tmp/boot");
-	if(img_path == "/dev/block/mmcblk0p2")
-		system("dd bs=4096 if=/tmp/newboot.img of=/dev/block/mmcblk0p2");
+	if(img_path == "/dev/block/mmcblk0p6")
+		system("dd bs=4096 if=/tmp/newboot.img of=/dev/block/mmcblk0p6");
 	else
 	{
 		sprintf(cmd, "cp /tmp/newboot.img \"%s\"", img_path.c_str());;
@@ -1041,7 +1044,7 @@ bool MultiROM::androidExportBoot(std::string name, std::string zip_path, int typ
 		gui_print("boot.img not found in the root of ZIP file!\n");
 		gui_print("WARNING: Using current boot sector as boot.img!!\n");
 
-		FILE *b = fopen("/dev/block/platform/sdhci-tegra.3/by-name/LNX", "r");
+		FILE *b = fopen("/dev/block/platform/omap/omap_hsmmc.1/by-name/boot", "r");
 		if(!b)
 		{
 			gui_print("Failed to open boot sector!\n");
